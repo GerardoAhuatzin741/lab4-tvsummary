@@ -1,7 +1,7 @@
 """Building the summary dict and writing it to disk."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def build_summary(result, aggregations, source_url):
@@ -12,7 +12,7 @@ def build_summary(result, aggregations, source_url):
     """
     summary = {
         "source_url": source_url,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "records_downloaded": result.records_downloaded,
         "records_processed": len(result.shows),
         "records_skipped": result.records_skipped,

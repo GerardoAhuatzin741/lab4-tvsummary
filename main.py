@@ -6,7 +6,13 @@ real work lives in src/tvsummary/.
 
 import sys
 
-from tvsummary import DownloadError, TVMazeSource, build_summary, default_aggregations, write_summary
+from tvsummary import (
+    DownloadError,
+    TVMazeSource,
+    build_summary,
+    default_aggregations,
+    write_summary,
+)
 from tvsummary.config import OUTPUT_PATH, SOURCE_URL, TIMEOUT_SECONDS
 
 

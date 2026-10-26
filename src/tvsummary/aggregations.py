@@ -71,7 +71,8 @@ class AverageRatingByLanguage(Aggregation):
             language: {
                 "average_rating": (
                     round(sum(ratings[language]) / len(ratings[language]), 2)
-                    if language in ratings else None
+                    if language in ratings
+                    else None
                 ),
                 "rated_shows": len(ratings.get(language, [])),
                 "unrated_shows": unrated.get(language, 0),
@@ -114,7 +115,9 @@ class TopRatedShows(Aggregation):
     def compute(self, shows):
         rated = [(show.rating, show.name) for show in shows if show.rating is not None]
         rated.sort(key=lambda pair: (-pair[0], pair[1]))
-        return [{"name": name, "rating": rating} for rating, name in rated[: self.limit]]
+        return [
+            {"name": name, "rating": rating} for rating, name in rated[: self.limit]
+        ]
 
 
 class DataQuality(Aggregation):

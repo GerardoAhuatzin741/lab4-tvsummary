@@ -45,7 +45,13 @@ class ShowCleaningTests(unittest.TestCase):
         self.assertEqual(Show(make_record(genres="Drama")).genres, frozenset())
 
     def test_bad_ratings_become_none(self):
-        for rating in (None, {"average": None}, {"average": "8.5"}, {"average": True}, 8.5):
+        for rating in (
+            None,
+            {"average": None},
+            {"average": "8.5"},
+            {"average": True},
+            8.5,
+        ):
             with self.subTest(rating=rating):
                 self.assertIsNone(Show(make_record(rating=rating)).rating)
 
@@ -88,7 +94,13 @@ class ParseTests(unittest.TestCase):
     """TVMazeSource.parse builds Show objects without touching the network."""
 
     def test_drops_invalid_and_repeated_records(self):
-        raw = [make_record(id=1), make_record(id=1), {"name": "no id"}, "junk", make_record(id=2)]
+        raw = [
+            make_record(id=1),
+            make_record(id=1),
+            {"name": "no id"},
+            "junk",
+            make_record(id=2),
+        ]
         shows, skipped = TVMazeSource.parse(raw)
         self.assertEqual([show.id for show in shows], [1, 2])
         self.assertEqual(skipped, 3)

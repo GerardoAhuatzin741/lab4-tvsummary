@@ -14,31 +14,42 @@ from tvsummary import (
 )
 
 
-def make_show(show_id, name, genres=(), rating=None, language="English",
-              premiered="2010-01-01", network="ABC", web=None):
+def make_show(
+    show_id,
+    name,
+    genres=(),
+    rating=None,
+    language="English",
+    premiered="2010-01-01",
+    network="ABC",
+    web=None,
+):
     """Build a Show from a small handmade record."""
-    return Show({
-        "id": show_id,
-        "name": name,
-        "genres": list(genres),
-        "rating": {"average": rating},
-        "language": language,
-        "premiered": premiered,
-        "network": {"name": network} if network else None,
-        "webChannel": {"name": web} if web else None,
-    })
+    return Show(
+        {
+            "id": show_id,
+            "name": name,
+            "genres": list(genres),
+            "rating": {"average": rating},
+            "language": language,
+            "premiered": premiered,
+            "network": {"name": network} if network else None,
+            "webChannel": {"name": web} if web else None,
+        }
+    )
 
 
 SHOWS = [
     make_show(1, "Alpha", ["Drama", "Crime"], 9.0, premiered="1995-03-01"),
     make_show(2, "Bravo", ["Drama"], 8.0, language="Japanese", premiered="2004-01-01"),
-    make_show(3, "Charlie", [], None, premiered="bad date", network=None, web="Netflix"),
+    make_show(
+        3, "Charlie", [], None, premiered="bad date", network=None, web="Netflix"
+    ),
     make_show(4, "Delta", ["Comedy"], 9.0, language=None, network=None),
 ]
 
 
 class AggregationTests(unittest.TestCase):
-
     def test_shows_per_genre_most_common_first(self):
         self.assertEqual(
             ShowsPerGenre().compute(SHOWS),
@@ -49,8 +60,16 @@ class AggregationTests(unittest.TestCase):
         self.assertEqual(
             AverageRatingByLanguage().compute(SHOWS),
             {
-                "English": {"average_rating": 9.0, "rated_shows": 1, "unrated_shows": 1},
-                "Japanese": {"average_rating": 8.0, "rated_shows": 1, "unrated_shows": 0},
+                "English": {
+                    "average_rating": 9.0,
+                    "rated_shows": 1,
+                    "unrated_shows": 1,
+                },
+                "Japanese": {
+                    "average_rating": 8.0,
+                    "rated_shows": 1,
+                    "unrated_shows": 0,
+                },
             },
         )
 
@@ -85,8 +104,13 @@ class AggregationTests(unittest.TestCase):
         results = {a.key: a.compute(SHOWS) for a in aggregations}
         self.assertEqual(
             list(results),
-            ["shows_per_genre", "average_rating_by_language", "shows_per_decade",
-             "top_rated_shows", "data_quality"],
+            [
+                "shows_per_genre",
+                "average_rating_by_language",
+                "shows_per_decade",
+                "top_rated_shows",
+                "data_quality",
+            ],
         )
 
     def test_base_class_must_be_overridden(self):
