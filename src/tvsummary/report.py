@@ -3,6 +3,8 @@
 import json
 from datetime import UTC, datetime
 
+from .errors import OutputError
+
 
 def build_summary(result, aggregations, source_url):
     """Combine a FetchResult and a list of aggregations into one dict.
@@ -23,9 +25,15 @@ def build_summary(result, aggregations, source_url):
 
 
 def write_summary(summary, path):
-    """Write the summary to a JSON file, creating its folder if needed."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    """Write the summary to a JSON file, creating its folder if needed.
+
+    Raises OutputError if the folder or file cannot be written.
+    """
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as error:
+        raise OutputError(f"could not write {path}: {error.strerror}") from error

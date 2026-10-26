@@ -5,11 +5,8 @@ from dataclasses import dataclass
 import requests
 
 from .config import SOURCE_URL, TIMEOUT_SECONDS
-from .models import InvalidRecordError, Show
-
-
-class DownloadError(Exception):
-    """Raised when the records cannot be downloaded or decoded."""
+from .errors import ResponseShapeError, SourceError
+from .models import Show
 
 
 @dataclass
@@ -32,7 +29,7 @@ class TVMazeSource:
     def fetch(self):
         """Download the records and return a FetchResult of Show objects.
 
-        Raises DownloadError with a readable message if anything goes wrong.
+        Raises SourceError or ResponseShapeError with a readable message.
         """
         raw_records = self.fetch_raw()
         shows, skipped = self.parse(raw_records)
@@ -41,34 +38,36 @@ class TVMazeSource:
     def fetch_raw(self):
         """Download the records and return them as a list of raw dicts.
 
-        Raises DownloadError if the request fails, the server answers with
-        an error status, or the body is not a JSON list.
+        Raises SourceError if the request fails or the server answers with
+        an error status, and ResponseShapeError if the body is not a JSON list.
         """
         try:
             response = requests.get(self.url, timeout=self.timeout)
             response.raise_for_status()
-        except requests.exceptions.Timeout:
-            raise DownloadError(
+        except requests.exceptions.Timeout as error:
+            raise SourceError(
                 f"the server did not respond within {self.timeout} seconds."
-            ) from None
-        except requests.exceptions.ConnectionError:
-            raise DownloadError(
-                "could not connect to the server. Check your internet connection."
-            ) from None
-        except requests.exceptions.HTTPError as err:
-            raise DownloadError(
-                f"the server returned HTTP {err.response.status_code}."
-            ) from None
-        except requests.exceptions.RequestException as err:
-            raise DownloadError(f"the request failed ({type(err).__name__}).") from None
+            ) from error
+        except requests.exceptions.ConnectionError as error:
+            raise SourceError(
+                "could not reach the server. Check your internet connection."
+            ) from error
+        except requests.exceptions.HTTPError as error:
+            raise SourceError(
+                f"the server returned HTTP {error.response.status_code}."
+            ) from error
+        except requests.exceptions.RequestException as error:
+            raise SourceError(
+                f"the request failed ({type(error).__name__})."
+            ) from error
 
         try:
             data = response.json()
-        except ValueError:
-            raise DownloadError("the response was not valid JSON.") from None
+        except ValueError as error:
+            raise ResponseShapeError("the response was not valid JSON.") from error
 
         if not isinstance(data, list):
-            raise DownloadError(
+            raise ResponseShapeError(
                 f"expected a JSON list of shows but got a {type(data).__name__}."
             )
         return data
@@ -84,11 +83,10 @@ class TVMazeSource:
         shows = []
         skipped = 0
         for raw in raw_records:
-            try:
-                show = Show(raw)
-            except InvalidRecordError:
+            if Show.problem_with(raw) is not None:
                 skipped += 1
                 continue
+            show = Show(raw)
             if show.id in seen_ids:
                 skipped += 1
                 continue

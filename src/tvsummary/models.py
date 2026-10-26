@@ -6,9 +6,7 @@ Show.__init__, so the rest of the program can trust every Show it gets.
 
 from datetime import datetime
 
-
-class InvalidRecordError(ValueError):
-    """Raised when a raw record cannot become a Show (not a dict, or no integer id)."""
+from .errors import InvalidRecordError
 
 
 class Show:
@@ -34,13 +32,12 @@ class Show:
         Raises InvalidRecordError if the record is not a dict or has
         no integer "id", because such a record cannot be identified.
         """
-        if not isinstance(raw, dict):
-            raise InvalidRecordError(f"expected a dict but got a {type(raw).__name__}")
-        show_id = raw.get("id")
-        if not isinstance(show_id, int):
-            raise InvalidRecordError(f"record has no integer id: {show_id!r}")
+        problem = self.problem_with(raw)
+        if problem is not None:
+            raise InvalidRecordError(problem)
 
-        self.id = show_id
+        self.id = raw["id"]
+        show_id = self.id
         self.name = self._clean_name(raw.get("name"), show_id)
         self.genres = self._clean_genres(raw.get("genres"))
         self.rating = self._clean_rating(raw.get("rating"))
@@ -55,6 +52,20 @@ class Show:
 
     def __repr__(self):
         return f"Show(id={self.id}, name={self.name!r})"
+
+    @staticmethod
+    def problem_with(raw):
+        """Return why a raw record cannot become a Show, or None if it can.
+
+        A usable record is a dict with an integer "id". Callers can check
+        this first and skip bad records without catching an exception.
+        """
+        if not isinstance(raw, dict):
+            return f"expected a dict but got a {type(raw).__name__}"
+        show_id = raw.get("id")
+        if not isinstance(show_id, int):
+            return f"record has no integer id: {show_id!r}"
+        return None
 
     # --- Cleaning helpers: each takes a raw value and returns a clean one ---
 
