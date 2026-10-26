@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tvsummary"
+version = "1.0.0"
+description = "Summarize TV shows from the TVmaze public API into a JSON report."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Gerardo Ahuatzin Galicia" }]
+dependencies = ["requests>=2.32"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

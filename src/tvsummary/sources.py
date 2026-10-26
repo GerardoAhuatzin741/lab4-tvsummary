@@ -1,0 +1,97 @@
+"""Getting the data. This is the only module that imports requests."""
+
+from dataclasses import dataclass
+
+import requests
+
+from .config import SOURCE_URL, TIMEOUT_SECONDS
+from .models import InvalidRecordError, Show
+
+
+class DownloadError(Exception):
+    """Raised when the records cannot be downloaded or decoded."""
+
+
+@dataclass
+class FetchResult:
+    """What one download produced: the clean shows and how many were dropped."""
+
+    shows: list
+    records_downloaded: int
+    records_skipped: int
+
+
+class TVMazeSource:
+    """Downloads TV show records from TVmaze and turns them into Show objects."""
+
+    def __init__(self, url=SOURCE_URL, timeout=TIMEOUT_SECONDS):
+        """Remember where to download from and how long to wait."""
+        self.url = url
+        self.timeout = timeout
+
+    def fetch(self):
+        """Download the records and return a FetchResult of Show objects.
+
+        Raises DownloadError with a readable message if anything goes wrong.
+        """
+        raw_records = self.fetch_raw()
+        shows, skipped = self.parse(raw_records)
+        return FetchResult(shows, len(raw_records), skipped)
+
+    def fetch_raw(self):
+        """Download the records and return them as a list of raw dicts.
+
+        Raises DownloadError if the request fails, the server answers with
+        an error status, or the body is not a JSON list.
+        """
+        try:
+            response = requests.get(self.url, timeout=self.timeout)
+            response.raise_for_status()
+        except requests.exceptions.Timeout:
+            raise DownloadError(
+                f"the server did not respond within {self.timeout} seconds."
+            ) from None
+        except requests.exceptions.ConnectionError:
+            raise DownloadError(
+                "could not connect to the server. Check your internet connection."
+            ) from None
+        except requests.exceptions.HTTPError as err:
+            raise DownloadError(
+                f"the server returned HTTP {err.response.status_code}."
+            ) from None
+        except requests.exceptions.RequestException as err:
+            raise DownloadError(f"the request failed ({type(err).__name__}).") from None
+
+        try:
+            data = response.json()
+        except ValueError:
+            raise DownloadError("the response was not valid JSON.") from None
+
+        if not isinstance(data, list):
+            raise DownloadError(
+                f"expected a JSON list of shows but got a {type(data).__name__}."
+            )
+        return data
+
+    @staticmethod
+    def parse(raw_records):
+        """Turn raw records into Show objects, dropping bad and repeated ones.
+
+        Returns a tuple (shows, skipped), where skipped counts the records
+        that were not usable or repeated an id already seen.
+        """
+        seen_ids = set()
+        shows = []
+        skipped = 0
+        for raw in raw_records:
+            try:
+                show = Show(raw)
+            except InvalidRecordError:
+                skipped += 1
+                continue
+            if show.id in seen_ids:
+                skipped += 1
+                continue
+            seen_ids.add(show.id)
+            shows.append(show)
+        return shows, skipped
