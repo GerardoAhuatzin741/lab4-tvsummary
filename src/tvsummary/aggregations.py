@@ -4,7 +4,10 @@ Every aggregation takes a list of Show objects and returns a result that
 can be written as JSON. None of them download, print or write anything.
 """
 
+from typing import Any
+
 from .config import TOP_RATED_LIMIT
+from .models import Show
 
 
 class Aggregation:
@@ -15,18 +18,18 @@ class Aggregation:
     compute(), so it never needs to know which subclass it has.
     """
 
-    key = "aggregation"
+    key: str = "aggregation"
 
-    def __init__(self, key=None):
+    def __init__(self, key: str | None = None) -> None:
         """Optionally override the section name used in the summary."""
         if key is not None:
             self.key = key
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> Any:
         """Return this section's result for a list of shows."""
         raise NotImplementedError(f"{type(self).__name__} must override compute()")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{type(self).__name__} -> {self.key}"
 
 
@@ -39,8 +42,8 @@ class ShowsPerGenre(Aggregation):
 
     key = "shows_per_genre"
 
-    def compute(self, shows):
-        counts = {}
+    def compute(self, shows: list[Show]) -> dict[str, int]:
+        counts: dict[str, int] = {}
         for show in shows:
             for genre in show.genres:
                 counts[genre] = counts.get(genre, 0) + 1
@@ -56,9 +59,9 @@ class AverageRatingByLanguage(Aggregation):
 
     key = "average_rating_by_language"
 
-    def compute(self, shows):
-        ratings = {}
-        unrated = {}
+    def compute(self, shows: list[Show]) -> dict[str, dict[str, Any]]:
+        ratings: dict[str, list[float]] = {}
+        unrated: dict[str, int] = {}
         for show in shows:
             if show.language is None:
                 continue
@@ -89,8 +92,8 @@ class ShowsPerDecade(Aggregation):
 
     key = "shows_per_decade"
 
-    def compute(self, shows):
-        counts = {}
+    def compute(self, shows: list[Show]) -> dict[str, int]:
+        counts: dict[str, int] = {}
         for show in shows:
             if show.premiere_year is None:
                 continue
@@ -107,12 +110,12 @@ class TopRatedShows(Aggregation):
 
     key = "top_rated_shows"
 
-    def __init__(self, limit=TOP_RATED_LIMIT, key=None):
+    def __init__(self, limit: int = TOP_RATED_LIMIT, key: str | None = None) -> None:
         """Keep at most `limit` shows in the list."""
         super().__init__(key)
         self.limit = limit
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> list[dict[str, Any]]:
         rated = [(show.rating, show.name) for show in shows if show.rating is not None]
         rated.sort(key=lambda pair: (-pair[0], pair[1]))
         return [
@@ -125,7 +128,7 @@ class DataQuality(Aggregation):
 
     key = "data_quality"
 
-    def compute(self, shows):
+    def compute(self, shows: list[Show]) -> dict[str, int]:
         channel_kinds = [show.channel_kind for show in shows]
         return {
             "no_genres": sum(1 for s in shows if not s.genres),
@@ -137,7 +140,7 @@ class DataQuality(Aggregation):
         }
 
 
-def default_aggregations():
+def default_aggregations() -> list[Aggregation]:
     """The aggregations in the order they appear in summary.json."""
     return [
         ShowsPerGenre(),

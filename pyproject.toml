@@ -17,6 +17,9 @@ dev = ["pytest", "mypy", "ruff", "types-requests"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+tvsummary = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

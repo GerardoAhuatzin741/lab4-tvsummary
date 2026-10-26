@@ -2,20 +2,27 @@
 
 import json
 import logging
+from collections.abc import Sequence
 from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
+from .aggregations import Aggregation
 from .errors import OutputError
+from .sources import FetchResult
 
 logger = logging.getLogger(__name__)
 
 
-def build_summary(result, aggregations, source_url):
+def build_summary(
+    result: FetchResult, aggregations: Sequence[Aggregation], source_url: str
+) -> dict[str, Any]:
     """Combine a FetchResult and a list of aggregations into one dict.
 
     Calls compute() on each aggregation without checking its type; each
     one adds its own section under its own key.
     """
-    summary = {
+    summary: dict[str, Any] = {
         "source_url": source_url,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "records_downloaded": result.records_downloaded,
@@ -28,7 +35,7 @@ def build_summary(result, aggregations, source_url):
     return summary
 
 
-def write_summary(summary, path):
+def write_summary(summary: dict[str, Any], path: Path) -> None:
     """Write the summary to a JSON file, creating its folder if needed.
 
     Raises OutputError if the folder or file cannot be written.

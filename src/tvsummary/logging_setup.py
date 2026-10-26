@@ -11,7 +11,7 @@ _HANDLER_NAME = "tvsummary-console"
 _FORMAT = "%(asctime)s %(levelname)-8s %(name)s: %(message)s"
 
 
-def configure_logging(level="INFO"):
+def configure_logging(level: str = "INFO") -> None:
     """Send log messages at `level` and above to standard error.
 
     Safe to call more than once: the handler added by an earlier call is

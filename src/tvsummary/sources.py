@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import requests
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class FetchResult:
     """What one download produced: the clean shows and how many were dropped."""
 
-    shows: list
+    shows: list[Show]
     records_downloaded: int
     records_skipped: int
 
@@ -24,12 +25,12 @@ class FetchResult:
 class TVMazeSource:
     """Downloads TV show records from TVmaze and turns them into Show objects."""
 
-    def __init__(self, url=SOURCE_URL, timeout=TIMEOUT_SECONDS):
+    def __init__(self, url: str = SOURCE_URL, timeout: float = TIMEOUT_SECONDS) -> None:
         """Remember where to download from and how long to wait."""
         self.url = url
         self.timeout = timeout
 
-    def fetch(self):
+    def fetch(self) -> FetchResult:
         """Download the records and return a FetchResult of Show objects.
 
         Raises SourceError or ResponseShapeError with a readable message.
@@ -41,7 +42,7 @@ class TVMazeSource:
         logger.info("Kept %s shows, skipped %s", len(shows), skipped)
         return FetchResult(shows, len(raw_records), skipped)
 
-    def fetch_raw(self):
+    def fetch_raw(self) -> list[Any]:
         """Download the records and return them as a list of raw dicts.
 
         Raises SourceError if the request fails or the server answers with
@@ -59,16 +60,15 @@ class TVMazeSource:
                 "could not reach the server. Check your internet connection."
             ) from error
         except requests.exceptions.HTTPError as error:
-            raise SourceError(
-                f"the server returned HTTP {error.response.status_code}."
-            ) from error
+            status = error.response.status_code if error.response is not None else "?"
+            raise SourceError(f"the server returned HTTP {status}.") from error
         except requests.exceptions.RequestException as error:
             raise SourceError(
                 f"the request failed ({type(error).__name__})."
             ) from error
 
         try:
-            data = response.json()
+            data: Any = response.json()
         except ValueError as error:
             raise ResponseShapeError("the response was not valid JSON.") from error
 
@@ -79,14 +79,14 @@ class TVMazeSource:
         return data
 
     @staticmethod
-    def parse(raw_records):
+    def parse(raw_records: list[Any]) -> tuple[list[Show], int]:
         """Turn raw records into Show objects, dropping bad and repeated ones.
 
         Returns a tuple (shows, skipped), where skipped counts the records
         that were not usable or repeated an id already seen.
         """
-        seen_ids = set()
-        shows = []
+        seen_ids: set[int] = set()
+        shows: list[Show] = []
         skipped = 0
         for position, raw in enumerate(raw_records):
             problem = Show.problem_with(raw)

@@ -21,7 +21,7 @@ from tvsummary.logging_setup import configure_logging
 logger = logging.getLogger("tvsummary.main")
 
 
-def main():
+def main() -> None:
     """Download, summarize and save the shows, exiting cleanly on failure."""
     configure_logging("INFO")
     try:
