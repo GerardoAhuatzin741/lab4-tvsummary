@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-10-26T03:58:08+00:00",
+  "config_file": "config/tvsummary.toml",
+  "settings": {
+    "source_url": "https://api.tvmaze.com/shows?page=0",
+    "timeout_seconds": 10.0,
+    "output_folder": "data/processed",
+    "top_rated_limit": 10,
+    "seed": 42,
+    "sample_size": 5,
+    "log_level": "INFO"
+  },
+  "python_version": "3.14.6",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "package_versions": {
+    "tvsummary": "1.0.0",
+    "requests": "2.34.2",
+    "pytest": "9.1.1",
+    "mypy": "2.4.0",
+    "ruff": "0.17.2"
+  }
+}
