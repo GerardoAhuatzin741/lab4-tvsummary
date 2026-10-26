@@ -71,10 +71,6 @@ There are 69 tests in `tests/`, and none of them use the network:
 
 I chose not to test the real TVmaze API. A test that calls it would fail without Wi-Fi or whenever TVmaze changes its data, so the download is tested with fake responses instead.
 
-## Comparing with Lab 03
-
-`data/reference/lab02_summary.json` is the output from the real Lab 02 run, which Lab 03 reproduced exactly. Compared with the new `data/processed/summary.json`, every key and value is the same apart from `generated_at`, and the only new key is `featured_shows`.
-
-## Known limitations
+`data/reference/lab02_summary.json` is the output from the real Lab 02 run on 8 October. Compared with the new `data/processed/summary.json`, the only new key is `featured_shows`. The only changed value is `web_channel_only` (11 to 12), because TVmaze moved one show to a streaming-only channel between the two runs. On the same data, the Lab 03 and Lab 04 summaries match exactly.
 
 The program only downloads the first page of shows, not the whole TVmaze catalogue. The output folder is relative, so the program must be run from the repository root. The featured shows only repeat if TVmaze returns the same shows. The average rating for a language with very few rated shows is not very reliable.
