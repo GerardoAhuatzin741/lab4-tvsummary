@@ -11,5 +11,25 @@ requires-python = ">=3.11"
 authors = [{ name = "Gerardo Ahuatzin Galicia" }]
 dependencies = ["requests>=2.32"]
 
+[project.optional-dependencies]
+dev = ["pytest", "mypy", "ruff", "types-requests"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
