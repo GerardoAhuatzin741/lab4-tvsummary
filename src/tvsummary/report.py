@@ -1,9 +1,12 @@
 """Building the summary dict and writing it to disk."""
 
 import json
+import logging
 from datetime import UTC, datetime
 
 from .errors import OutputError
+
+logger = logging.getLogger(__name__)
 
 
 def build_summary(result, aggregations, source_url):
@@ -20,6 +23,7 @@ def build_summary(result, aggregations, source_url):
         "records_skipped": result.records_skipped,
     }
     for aggregation in aggregations:
+        logger.debug("Computing %s", aggregation.key)
         summary[aggregation.key] = aggregation.compute(result.shows)
     return summary
 
@@ -37,3 +41,4 @@ def write_summary(summary, path):
         )
     except OSError as error:
         raise OutputError(f"could not write {path}: {error.strerror}") from error
+    logger.info("Wrote %s", path)

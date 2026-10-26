@@ -1,9 +1,10 @@
 """Entry point: download the shows, summarize them and save the report.
 
-This file only wires the package together and prints messages. All the
-real work lives in src/tvsummary/.
+This file only wires the package together. It configures logging, and
+its only print is the final line the user reads.
 """
 
+import logging
 import sys
 
 from tvsummary import (
@@ -15,11 +16,14 @@ from tvsummary import (
     write_summary,
 )
 from tvsummary.config import OUTPUT_PATH, SOURCE_URL, TIMEOUT_SECONDS
+from tvsummary.logging_setup import configure_logging
+
+logger = logging.getLogger("tvsummary.main")
 
 
 def main():
     """Download, summarize and save the shows, exiting cleanly on failure."""
-    print(f"Downloading shows from {SOURCE_URL} ...")
+    configure_logging("INFO")
     try:
         result = TVMazeSource(SOURCE_URL, TIMEOUT_SECONDS).fetch()
         if not result.shows:
@@ -27,6 +31,7 @@ def main():
         summary = build_summary(result, default_aggregations(), SOURCE_URL)
         write_summary(summary, OUTPUT_PATH)
     except TvSummaryError as error:
+        logger.error("Run stopped: %s", error)
         sys.exit(f"Error: {error}")
 
     print(

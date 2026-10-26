@@ -95,3 +95,16 @@ def test_bad_bodies_become_response_shape_errors(
 def test_every_package_error_shares_one_base_class() -> None:
     assert issubclass(SourceError, TvSummaryError)
     assert issubclass(ResponseShapeError, TvSummaryError)
+
+
+def test_skipped_records_are_logged_as_warnings(
+    make_raw: Callable[..., Any], caplog: pytest.LogCaptureFixture
+) -> None:
+    with caplog.at_level("WARNING", logger="tvsummary.sources"):
+        TVMazeSource.parse([make_raw(id=1), "junk", make_raw(id=1)])
+    messages = [record.getMessage() for record in caplog.records]
+    assert messages == [
+        "Skipping record 1: expected a dict but got a str",
+        "Skipping record 2: repeated id 1",
+    ]
+    assert all(record.levelname == "WARNING" for record in caplog.records)

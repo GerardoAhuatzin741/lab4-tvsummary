@@ -1,5 +1,6 @@
 """Getting the data. This is the only module that imports requests."""
 
+import logging
 from dataclasses import dataclass
 
 import requests
@@ -7,6 +8,8 @@ import requests
 from .config import SOURCE_URL, TIMEOUT_SECONDS
 from .errors import ResponseShapeError, SourceError
 from .models import Show
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,8 +34,11 @@ class TVMazeSource:
 
         Raises SourceError or ResponseShapeError with a readable message.
         """
+        logger.info("Downloading shows from %s", self.url)
         raw_records = self.fetch_raw()
+        logger.debug("%s records arrived", len(raw_records))
         shows, skipped = self.parse(raw_records)
+        logger.info("Kept %s shows, skipped %s", len(shows), skipped)
         return FetchResult(shows, len(raw_records), skipped)
 
     def fetch_raw(self):
@@ -82,12 +88,15 @@ class TVMazeSource:
         seen_ids = set()
         shows = []
         skipped = 0
-        for raw in raw_records:
-            if Show.problem_with(raw) is not None:
+        for position, raw in enumerate(raw_records):
+            problem = Show.problem_with(raw)
+            if problem is not None:
+                logger.warning("Skipping record %s: %s", position, problem)
                 skipped += 1
                 continue
             show = Show(raw)
             if show.id in seen_ids:
+                logger.warning("Skipping record %s: repeated id %s", position, show.id)
                 skipped += 1
                 continue
             seen_ids.add(show.id)
