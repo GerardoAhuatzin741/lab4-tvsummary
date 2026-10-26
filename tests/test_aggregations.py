@@ -1,6 +1,6 @@
-"""Tests for the Aggregation subclasses, using handmade Show objects only."""
+"""One test per aggregation class, using the hand-made shows from conftest.py."""
 
-import unittest
+import pytest
 
 from tvsummary import (
     Aggregation,
@@ -14,113 +14,58 @@ from tvsummary import (
 )
 
 
-def make_show(
-    show_id,
-    name,
-    genres=(),
-    rating=None,
-    language="English",
-    premiered="2010-01-01",
-    network="ABC",
-    web=None,
-):
-    """Build a Show from a small handmade record."""
-    return Show(
-        {
-            "id": show_id,
-            "name": name,
-            "genres": list(genres),
-            "rating": {"average": rating},
-            "language": language,
-            "premiered": premiered,
-            "network": {"name": network} if network else None,
-            "webChannel": {"name": web} if web else None,
-        }
-    )
+def test_shows_per_genre_most_common_first(sample_shows: list[Show]) -> None:
+    result = ShowsPerGenre().compute(sample_shows)
+    assert result == {"Drama": 2, "Comedy": 1, "Crime": 1}
+    assert list(result) == ["Drama", "Comedy", "Crime"]
 
 
-SHOWS = [
-    make_show(1, "Alpha", ["Drama", "Crime"], 9.0, premiered="1995-03-01"),
-    make_show(2, "Bravo", ["Drama"], 8.0, language="Japanese", premiered="2004-01-01"),
-    make_show(
-        3, "Charlie", [], None, premiered="bad date", network=None, web="Netflix"
-    ),
-    make_show(4, "Delta", ["Comedy"], 9.0, language=None, network=None),
-]
+def test_average_rating_ignores_unrated_shows(sample_shows: list[Show]) -> None:
+    assert AverageRatingByLanguage().compute(sample_shows) == {
+        "English": {"average_rating": 9.0, "rated_shows": 1, "unrated_shows": 1},
+        "Japanese": {"average_rating": 8.0, "rated_shows": 1, "unrated_shows": 0},
+    }
 
 
-class AggregationTests(unittest.TestCase):
-    def test_shows_per_genre_most_common_first(self):
-        self.assertEqual(
-            ShowsPerGenre().compute(SHOWS),
-            {"Drama": 2, "Comedy": 1, "Crime": 1},
-        )
-
-    def test_average_rating_ignores_unrated_shows(self):
-        self.assertEqual(
-            AverageRatingByLanguage().compute(SHOWS),
-            {
-                "English": {
-                    "average_rating": 9.0,
-                    "rated_shows": 1,
-                    "unrated_shows": 1,
-                },
-                "Japanese": {
-                    "average_rating": 8.0,
-                    "rated_shows": 1,
-                    "unrated_shows": 0,
-                },
-            },
-        )
-
-    def test_shows_per_decade_skips_bad_dates(self):
-        self.assertEqual(
-            ShowsPerDecade().compute(SHOWS),
-            {"1990s": 1, "2000s": 1, "2010s": 1},
-        )
-
-    def test_top_rated_breaks_ties_by_name_and_respects_limit(self):
-        self.assertEqual(
-            TopRatedShows(limit=2).compute(SHOWS),
-            [{"name": "Alpha", "rating": 9.0}, {"name": "Delta", "rating": 9.0}],
-        )
-
-    def test_data_quality_counts(self):
-        self.assertEqual(
-            DataQuality().compute(SHOWS),
-            {
-                "no_genres": 1,
-                "no_rating": 1,
-                "no_language": 1,
-                "no_valid_premiere_date": 1,
-                "web_channel_only": 1,
-                "no_network_or_web_channel": 1,
-            },
-        )
-
-    def test_every_default_aggregation_is_called_the_same_way(self):
-        aggregations = default_aggregations()
-        self.assertTrue(all(isinstance(a, Aggregation) for a in aggregations))
-        results = {a.key: a.compute(SHOWS) for a in aggregations}
-        self.assertEqual(
-            list(results),
-            [
-                "shows_per_genre",
-                "average_rating_by_language",
-                "shows_per_decade",
-                "top_rated_shows",
-                "data_quality",
-            ],
-        )
-
-    def test_base_class_must_be_overridden(self):
-        with self.assertRaises(NotImplementedError):
-            Aggregation().compute(SHOWS)
-
-    def test_empty_list_gives_empty_results(self):
-        self.assertEqual(ShowsPerGenre().compute([]), {})
-        self.assertEqual(TopRatedShows().compute([]), [])
+def test_shows_per_decade_skips_bad_dates(sample_shows: list[Show]) -> None:
+    assert ShowsPerDecade().compute(sample_shows) == {
+        "1990s": 1,
+        "2000s": 1,
+        "2010s": 1,
+    }
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_top_rated_breaks_ties_by_name(sample_shows: list[Show]) -> None:
+    assert TopRatedShows(limit=2).compute(sample_shows) == [
+        {"name": "Alpha", "rating": 9.0},
+        {"name": "Delta", "rating": 9.0},
+    ]
+
+
+def test_data_quality_counts(sample_shows: list[Show]) -> None:
+    assert DataQuality().compute(sample_shows) == {
+        "no_genres": 1,
+        "no_rating": 1,
+        "no_language": 1,
+        "no_valid_premiere_date": 1,
+        "web_channel_only": 1,
+        "no_network_or_web_channel": 1,
+    }
+
+
+def test_every_aggregation_is_called_the_same_way(sample_shows: list[Show]) -> None:
+    aggregations = default_aggregations()
+    assert all(isinstance(a, Aggregation) for a in aggregations)
+    keys = [a.key for a in aggregations]
+    results = {a.key: a.compute(sample_shows) for a in aggregations}
+    assert list(results) == keys
+
+
+def test_base_class_must_be_overridden(sample_shows: list[Show]) -> None:
+    with pytest.raises(NotImplementedError, match="must override compute"):
+        Aggregation().compute(sample_shows)
+
+
+def test_empty_input_gives_empty_results() -> None:
+    assert ShowsPerGenre().compute([]) == {}
+    assert TopRatedShows().compute([]) == []
