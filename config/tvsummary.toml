@@ -1,0 +1,26 @@
+# Every setting tvsummary reads. Paths are relative to the folder you run
+# the program from (the repository root).
+
+[source]
+# The TVmaze page to download.
+url = "https://api.tvmaze.com/shows?page=0"
+# Seconds to wait for the server before giving up.
+timeout_seconds = 10
+
+[output]
+# Folder for summary.json and run_info.json.
+folder = "data/processed"
+
+[summary]
+# How many shows the top_rated_shows list keeps.
+top_rated_limit = 10
+
+[featured]
+# The same seed always picks the same featured shows from the same data.
+seed = 42
+# How many show names go in featured_shows.
+sample_size = 5
+
+[logging]
+# DEBUG, INFO, WARNING, ERROR or CRITICAL.
+level = "INFO"

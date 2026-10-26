@@ -4,9 +4,10 @@ Every aggregation takes a list of Show objects and returns a result that
 can be written as JSON. None of them download, print or write anything.
 """
 
+import random
 from typing import Any
 
-from .config import TOP_RATED_LIMIT
+from .config import Settings
 from .models import Show
 
 
@@ -110,7 +111,7 @@ class TopRatedShows(Aggregation):
 
     key = "top_rated_shows"
 
-    def __init__(self, limit: int = TOP_RATED_LIMIT, key: str | None = None) -> None:
+    def __init__(self, limit: int = 10, key: str | None = None) -> None:
         """Keep at most `limit` shows in the list."""
         super().__init__(key)
         self.limit = limit
@@ -140,12 +141,34 @@ class DataQuality(Aggregation):
         }
 
 
-def default_aggregations() -> list[Aggregation]:
+class FeaturedShows(Aggregation):
+    """A few show names picked at random, repeatable through a seed.
+
+    The shows are put in id order first, so the same data and the same
+    seed always give the same list, whatever order the download used.
+    """
+
+    key = "featured_shows"
+
+    def __init__(self, seed: int, sample_size: int, key: str | None = None) -> None:
+        """Pick `sample_size` names with random.Random(seed)."""
+        super().__init__(key)
+        self.seed = seed
+        self.sample_size = sample_size
+
+    def compute(self, shows: list[Show]) -> list[str]:
+        names = [show.name for show in sorted(shows, key=lambda show: show.id)]
+        count = min(self.sample_size, len(names))
+        return random.Random(self.seed).sample(names, count)
+
+
+def default_aggregations(settings: Settings) -> list[Aggregation]:
     """The aggregations in the order they appear in summary.json."""
     return [
         ShowsPerGenre(),
         AverageRatingByLanguage(),
         ShowsPerDecade(),
-        TopRatedShows(),
+        TopRatedShows(settings.top_rated_limit),
         DataQuality(),
+        FeaturedShows(settings.seed, settings.sample_size),
     ]

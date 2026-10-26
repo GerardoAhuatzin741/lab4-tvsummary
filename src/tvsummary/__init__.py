@@ -4,11 +4,13 @@ from .aggregations import (
     Aggregation,
     AverageRatingByLanguage,
     DataQuality,
+    FeaturedShows,
     ShowsPerDecade,
     ShowsPerGenre,
     TopRatedShows,
     default_aggregations,
 )
+from .config import DEFAULT_CONFIG_PATH, Settings, load_settings
 from .errors import (
     InvalidRecordError,
     OutputError,
@@ -18,19 +20,22 @@ from .errors import (
     TvSummaryError,
 )
 from .models import Show
-from .report import build_summary, write_summary
+from .report import build_run_info, build_summary, write_json
 from .sources import FetchResult, TVMazeSource
 
 __version__ = "1.0.0"
 
 __all__ = [
+    "DEFAULT_CONFIG_PATH",
     "Aggregation",
     "AverageRatingByLanguage",
     "DataQuality",
+    "FeaturedShows",
     "FetchResult",
     "InvalidRecordError",
     "OutputError",
     "ResponseShapeError",
+    "Settings",
     "SettingsError",
     "Show",
     "ShowsPerDecade",
@@ -39,7 +44,9 @@ __all__ = [
     "TVMazeSource",
     "TopRatedShows",
     "TvSummaryError",
+    "build_run_info",
     "build_summary",
     "default_aggregations",
-    "write_summary",
+    "load_settings",
+    "write_json",
 ]

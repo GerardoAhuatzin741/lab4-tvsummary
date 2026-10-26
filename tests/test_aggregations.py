@@ -6,6 +6,8 @@ from tvsummary import (
     Aggregation,
     AverageRatingByLanguage,
     DataQuality,
+    FeaturedShows,
+    Settings,
     Show,
     ShowsPerDecade,
     ShowsPerGenre,
@@ -53,8 +55,10 @@ def test_data_quality_counts(sample_shows: list[Show]) -> None:
     }
 
 
-def test_every_aggregation_is_called_the_same_way(sample_shows: list[Show]) -> None:
-    aggregations = default_aggregations()
+def test_every_aggregation_is_called_the_same_way(
+    sample_shows: list[Show], settings: Settings
+) -> None:
+    aggregations = default_aggregations(settings)
     assert all(isinstance(a, Aggregation) for a in aggregations)
     keys = [a.key for a in aggregations]
     results = {a.key: a.compute(sample_shows) for a in aggregations}
@@ -69,3 +73,28 @@ def test_base_class_must_be_overridden(sample_shows: list[Show]) -> None:
 def test_empty_input_gives_empty_results() -> None:
     assert ShowsPerGenre().compute([]) == {}
     assert TopRatedShows().compute([]) == []
+
+
+def test_same_seed_gives_the_same_featured_shows(sample_shows: list[Show]) -> None:
+    first = FeaturedShows(seed=42, sample_size=3).compute(sample_shows)
+    again = FeaturedShows(seed=42, sample_size=3).compute(list(reversed(sample_shows)))
+    assert first == again
+    assert len(first) == 3
+    assert set(first) <= {"Alpha", "Bravo", "Charlie", "Delta"}
+
+
+def test_different_seeds_can_give_different_featured_shows(
+    sample_shows: list[Show],
+) -> None:
+    picks = {
+        tuple(FeaturedShows(seed=seed, sample_size=2).compute(sample_shows))
+        for seed in range(20)
+    }
+    assert len(picks) > 1
+
+
+def test_featured_shows_never_asks_for_more_than_exist(
+    sample_shows: list[Show],
+) -> None:
+    picked = FeaturedShows(seed=1, sample_size=50).compute(sample_shows)
+    assert sorted(picked) == ["Alpha", "Bravo", "Charlie", "Delta"]

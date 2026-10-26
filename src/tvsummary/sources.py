@@ -6,7 +6,6 @@ from typing import Any
 
 import requests
 
-from .config import SOURCE_URL, TIMEOUT_SECONDS
 from .errors import ResponseShapeError, SourceError
 from .models import Show
 
@@ -25,7 +24,7 @@ class FetchResult:
 class TVMazeSource:
     """Downloads TV show records from TVmaze and turns them into Show objects."""
 
-    def __init__(self, url: str = SOURCE_URL, timeout: float = TIMEOUT_SECONDS) -> None:
+    def __init__(self, url: str, timeout: float) -> None:
         """Remember where to download from and how long to wait."""
         self.url = url
         self.timeout = timeout

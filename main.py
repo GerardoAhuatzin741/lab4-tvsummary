@@ -8,14 +8,16 @@ import logging
 import sys
 
 from tvsummary import (
+    DEFAULT_CONFIG_PATH,
     ResponseShapeError,
     TVMazeSource,
     TvSummaryError,
+    build_run_info,
     build_summary,
     default_aggregations,
-    write_summary,
+    load_settings,
+    write_json,
 )
-from tvsummary.config import OUTPUT_PATH, SOURCE_URL, TIMEOUT_SECONDS
 from tvsummary.logging_setup import configure_logging
 
 logger = logging.getLogger("tvsummary.main")
@@ -25,18 +27,26 @@ def main() -> None:
     """Download, summarize and save the shows, exiting cleanly on failure."""
     configure_logging("INFO")
     try:
-        result = TVMazeSource(SOURCE_URL, TIMEOUT_SECONDS).fetch()
+        settings = load_settings(DEFAULT_CONFIG_PATH)
+        configure_logging(settings.log_level)
+        source = TVMazeSource(settings.source_url, settings.timeout_seconds)
+        result = source.fetch()
         if not result.shows:
             raise ResponseShapeError("the download contained no usable show records.")
-        summary = build_summary(result, default_aggregations(), SOURCE_URL)
-        write_summary(summary, OUTPUT_PATH)
+        summary = build_summary(
+            result, default_aggregations(settings), settings.source_url
+        )
+        write_json(summary, settings.summary_path)
+        write_json(
+            build_run_info(settings, DEFAULT_CONFIG_PATH), settings.run_info_path
+        )
     except TvSummaryError as error:
         logger.error("Run stopped: %s", error)
         sys.exit(f"Error: {error}")
 
     print(
         f"Processed {len(result.shows)} shows ({result.records_skipped} skipped). "
-        f"Summary written to {OUTPUT_PATH}."
+        f"Summary written to {settings.summary_path}."
     )
 
 

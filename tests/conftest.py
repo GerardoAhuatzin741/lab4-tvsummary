@@ -1,11 +1,12 @@
 """Shared fixtures: hand-made records and shows, so no test needs the network."""
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
 
-from tvsummary import Show
+from tvsummary import Settings, Show
 
 RawRecord = dict[str, Any]
 
@@ -78,3 +79,45 @@ def sample_shows() -> list[Show]:
             )
         ),
     ]
+
+
+VALID_TOML = """
+[source]
+url = "https://example.invalid/shows"
+timeout_seconds = 5
+
+[output]
+folder = "out"
+
+[summary]
+top_rated_limit = 3
+
+[featured]
+seed = 7
+sample_size = 2
+
+[logging]
+level = "info"
+"""
+
+
+@pytest.fixture
+def settings(tmp_path: Path) -> Settings:
+    """Settings that write into this test's own temporary folder."""
+    return Settings(
+        source_url="https://example.invalid/shows",
+        timeout_seconds=1.0,
+        output_folder=tmp_path / "processed",
+        top_rated_limit=10,
+        seed=42,
+        sample_size=2,
+        log_level="INFO",
+    )
+
+
+@pytest.fixture
+def settings_file(tmp_path: Path) -> Path:
+    """A complete, valid settings file in a temporary folder."""
+    path = tmp_path / "tvsummary.toml"
+    path.write_text(VALID_TOML, encoding="utf-8")
+    return path
